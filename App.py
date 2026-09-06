@@ -56,7 +56,7 @@ if st.button("Generate Full Video 🚀"):
                     d.text((80, 600), f"AI VIDEO PRO\nTopic: {topic}\nLang: {language}", fill=(255, 255, 255))
                     img.save(img_path)
 
-                # ৫. ভিডিওর ব্যাকগ্রাউন্ড হিসেবে একটি ১ সেকেন্ডের সচল ক্লিপ (১ ফ্রেমে কালার চেঞ্জ) তৈরি করা যা মোবাইল ব্রাউজারকে সচল ভিডিও হিসেবে ডিটেক্ট করতে বাধ্য করবে
+                # ৫. ভিডিওর ব্যাকগ্রাউন্ড ফ্রেম
                 frame_1 = mp.ImageClip(img_path).set_duration(duration)
                 
                 # ৬. ভিডিও এবং অডিও মার্জ করা
@@ -65,14 +65,12 @@ if st.button("Generate Full Video 🚀"):
                 video_path = "final_output.mp4"
                 if os.path.exists(video_path): os.remove(video_path)
                 
-                # মোবাইল ও ব্রাউজার ফ্রেন্ডলি কম্প্রেশন প্রোফাইলসহ ফাইনাল রেন্ডারিং
+                # স্ট্যান্ডার্ড ফরম্যাটে ভিডিও সেভ করা
                 video_clip.write_videofile(
                     video_path, 
                     fps=24, 
                     codec="libx264", 
                     audio_codec="aac",
-                    bitrate="1000k",
-                    ffmpeg_params=["-pix_fmt", "yuv420p", "-profile:v", "baseline", "-level", "3.0"],
                     temp_audiofile='temp-audio.m4a', 
                     remove_temp=True
                 )
@@ -86,19 +84,20 @@ if st.button("Generate Full Video 🚀"):
                 st.write(script_text)
                 
                 st.subheader("Final AI Video:")
-                # মোবাইলের জন্য সরাসরি ভিডিও ডাউনলোড করার ব্যাকআপ বাটনসহ ভিডিও দেখানো
-                with open(video_path, "rb") as f:
-                    st.download_button(
-                        label="📥 সরাসরি মোবাইলে ডাউনলোড করুন (Download Video)",
-                        data=f,
-                        file_name="ai_video.mp4",
-                        mime="video/mp4"
-                    )
-                st.video(video_path)
+                
+                # সমাধান: সরাসরি ফাইল রিড করে কাজ করার জন্য ডেটা স্ট্রিম তৈরি
+                with open(video_path, "rb") as file:
+                    video_bytes = file.read()
+                    
+                # গ্যালারিতে সরাসরি ডাউনলোডের জন্য বাটন
+                st.download_button(
+                    label="📥 সরাসরি মোবাইলে ডাউনলোড করুন (Download Video to Gallery)",
+                    data=video_bytes,
+                    file_name="ai_video.mp4",
+                    mime="video/mp4"
+                )
+                
+                st.success("ভিডিওটি সফলভাবে তৈরি হয়েছে! ওপরে থাকা ডাউনলোড বাটনে ক্লিক করে এটি আপনার মোবাইলের গ্যালারিতে সেভ করে নিন।")
                 
             except Exception as e:
                 st.error(f"System Error: {str(e)}")
-
-
-
-
