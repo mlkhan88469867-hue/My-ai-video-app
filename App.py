@@ -1,4 +1,3 @@
-
 import streamlit as st
 from gtts import gTTS
 import os
@@ -48,6 +47,7 @@ if st.button("Generate Full Video 🚀"):
                     user_img = user_img.resize((720, 1280)) # মোবাইল স্ট্যান্ডার্ড সাইজ
                     user_img.save(img_path)
                 else:
+                    # টেক্সট মোডের জন্য সুন্দর কালার ও টেক্সট
                     img = Image.new('RGB', (720, 1280), color = (74, 20, 140))
                     d = ImageDraw.Draw(img)
                     d.text((80, 600), f"AI VIDEO PRO\nTopic: {topic}\nLang: {language}", fill=(255, 255, 255))
@@ -57,19 +57,20 @@ if st.button("Generate Full Video 🚀"):
                 audio_clip = mp.AudioFileClip(audio_path)
                 duration = audio_clip.duration
                 
-                # ৫. ভিডিওর ব্ল্যাঙ্ক স্ক্রিন ফিক্স করার মূল কোড (ImageClip + set_duration)
+                # ৫. ভিডিওর মোবাইল-ফ্রেন্ডলি ফরম্যাট তৈরি
                 video_clip = mp.ImageClip(img_path).set_duration(duration)
                 video_clip = video_clip.set_audio(audio_clip)
                 
                 video_path = "final_output.mp4"
                 if os.path.exists(video_path): os.remove(video_path)
                 
-                # মোবাইল ফ্রেন্ডলি স্ট্যান্ডার্ড ফরম্যাটে ভিডিও সেভ করা
+                # লজিক ফিক্স: pix_fmt="yuv420p" যোগ করা হয়েছে যা সব মোবাইলে ভিডিও প্লে নিশ্চিত করে
                 video_clip.write_videofile(
                     video_path, 
                     fps=24, 
                     codec="libx264", 
                     audio_codec="aac",
+                    ffmpeg_params=["-pix_fmt", "yuv420p"],
                     temp_audiofile='temp-audio.m4a', 
                     remove_temp=True
                 )
@@ -86,4 +87,6 @@ if st.button("Generate Full Video 🚀"):
                 
             except Exception as e:
                 st.error(f"System Error: {str(e)}")
+
+
 
