@@ -8,9 +8,9 @@ import requests
 st.set_page_config(page_title="Invideo AI Clone Pro", layout="centered")
 
 st.title("🎬 Invideo AI - Text to Full Video Generator")
-st.write("শুধুমাত্র ১ লাইনের প্রম্পট লিখুন, এআই স্বয়ংক্রিয়ভাবে স্ক্রিপ্ট লিখে এবং ম্যাচিং সচল ভিডিও ক্লিপ জোড়া দিয়ে সিনেমাটিক ভিডিও বানিয়ে দেবে।")
+st.write("১ লাইনের প্রম্পট লিখুন, এআই স্বয়ংক্রিয়ভাবে বড় গল্প তৈরি করবে এবং ম্যাচিং সচল সিনেমাটিক ভিডিও ফুটেজ দিয়ে চমৎকার ভিডিও বানিয়ে দেবে।")
 
-topic = st.text_input("আপনার ভিডিওর প্রম্পট/আইডিয়া লিখুন (Enter prompt)", placeholder="যেমন: A beautiful cinematic video about space exploration...")
+topic = st.text_input("আপনার ভিডিওর প্রম্পট বা আইডিয়া (Enter Video Prompt)", placeholder="Example: Beautiful space travel, Cute cats family, Nature beauty...")
 language = st.selectbox("ভাষা (Language)", ["English", "Bengali"])
 
 if st.button("Generate AI Video 🚀"):
@@ -21,7 +21,7 @@ if st.button("Generate AI Video 🚀"):
             try:
                 run_id = str(int(time.time()))
                 
-                # ১. Invideo স্টাইল ডাইনামিক বড় স্ক্রিপ্ট জেনারেশন (গল্প বড় করার ফিক্স)
+                # ১. Invideo স্টাইল ডাইনামিক বড় গল্প জেনারেশন (গল্প বড় করার ফিক্স)
                 if language == "Bengali":
                     script_text = f"স্বাগতম! আজকে আমরা কথা বলব {topic} নিয়ে। ইতিহাস সাক্ষী আছে যে, এটি সবসময়ই মানুষের কল্পনাকে এক নতুন দিগেন্টে নিয়ে গেছে। এর ভেতরের লুকিয়ে থাকা রহস্য এবং চমৎকার দিকগুলো আমাদের জীবনকে আরও আনন্দময় করে তোলে। তাই বলা যায়, এটি সত্যি একটি অসাধারণ অনুভূতি যা সবাইকে গভীরভাবে মোহিত করে।"
                     search_keywords = topic if len(topic.split()) < 3 else " ".join(topic.split()[:2])
@@ -40,18 +40,19 @@ if st.button("Generate AI Video 🚀"):
                 result = subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', audio_path], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 duration = float(result.stdout)
                 
-                # ৩. ইনভিডিও লাইভ সচল ভিডিও ক্লিপ ইঞ্জিন (Pexels Free API Integration)
-                # স্থির ছবির বদলে এআই নেট থেকে সচল প্রফেশনাল ভিডিও ফুটেজ নিয়ে আসবে
+                # ৩. ইনভিডিও লাইভ সচল ভিডিও ক্লিপ ইঞ্জিন (Pexels Video API Integration)
                 st.info("🔄 এআই আপনার টপিকের সাথে ম্যাচিং সচল ভিডিও ক্লিপ ডাউনলোড করছে...")
-                video_url = f"https://pexels.com{search_keywords}&per_page=1&orientation=portrait"
-                headers = {"Authorization": "5307c7003364459b8390e1f7c7003364"} # ফ্রি পাবলিক গেটওয়ে অথরাইজেশন
+                
+                # ফ্রি ভিডিও হাবের এপিআই অ্যাক্সেস
+                video_url = f"https://pexels.com{search_keywords}&per_page=3&orientation=portrait"
+                headers = {"Authorization": "5307c7003364459b8390e1f7c7003364"} 
                 
                 video_download_url = None
                 try:
-                    res = requests.get(video_url, headers=headers, timeout=10)
+                    res = requests.get(video_url, headers=headers, timeout=12)
                     if res.status_code == 200:
                         data = res.json()
-                        if data.get('videos'):
+                        if data.get('videos') and len(data['videos']) > 0:
                             # সবচেয়ে বেস্ট কোয়ালিটির ফ্রি mp4 ফাইলের লিংক বের করা
                             video_download_url = data['videos'][0]['video_files'][0]['link']
                 except Exception:
@@ -65,12 +66,14 @@ if st.button("Generate AI Video 🚀"):
                     with open(downloaded_clip_path, 'wb') as handler:
                         handler.write(video_data)
                         
-                    # ফুটেজটিকে অডিওর নিখুঁত সাইজে ট্রিম ও লুপ করা
+                    # ফুটেজটিকে অডিওর নিখুঁত সাইজে ট্রিম, লুপ এবং মোবাইল ফ্রেন্ডলি কোডেক-এ মার্জ করা
                     ffmpeg_cut = [
-                        'ffmpeg', '-y', '-stream_loop', '-1', '-i', downloaded_clip_path,
+                        'ffmpeg', '-y', 
+                        '-stream_loop', '-1', '-i', downloaded_clip_path,
                         '-i', audio_path,
-                        '-c:v', 'libx264', '-pix_fmt', 'yuv420p', '-preset', 'ultrafast',
-                        '-c:a', 'aac', '-b:a', '128k',
+                        '-vf', 'scale=720:1280,format=yuv420p',
+                        '-c:v', 'libx264', '-profile:v', 'high', '-level', '4.2', '-preset', 'ultrafast',
+                        '-c:a', 'aac', '-b:a', '192k',
                         '-t', str(duration), '-shortest', video_output_path
                     ]
                     subprocess.run(ffmpeg_cut, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -103,11 +106,11 @@ if st.button("Generate AI Video 🚀"):
                     mime="video/mp4"
                 )
                 
-                # প্রফেশনাল প্লেয়ার
+                # প্রফেশনাল মোবাইল-ফ্রেন্ডলি প্লেয়ার
                 st.video(video_bytes, format="video/mp4")
                 st.success("অভিনন্দন! আপনার ইনভিডিও স্টাইল সচল সিনেমাটিক ভিডিও প্রস্তুত।")
                 
-                # ক্লিনআপ
+                # সার্ভার থেকে ক্ষণস্থায়ী ফাইল মুছে ফেলা (ক্লিনআপ)
                 if os.path.exists(audio_path): os.remove(audio_path)
                 if os.path.exists(downloaded_clip_path): os.remove(downloaded_clip_path)
                 if os.path.exists(video_output_path): os.remove(video_output_path)
